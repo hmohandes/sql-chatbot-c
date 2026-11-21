@@ -1,4 +1,4 @@
-from app.agent import _extract_sql, _fallback_parse, _normalize_tool_call
+from app.agent import _extract_sql, _fallback_parse, _normalize_tool_call, _version_tuple
 
 
 def test_fallback_parse_tool_call():
@@ -30,6 +30,12 @@ def test_normalize_openai_style_call():
     )
     assert name == "sql_db_schema"
     assert arguments["table_names"] == "a, b"
+
+
+def test_version_tuple_ignores_local_suffix():
+    assert _version_tuple("5.24.0") >= (5, 10, 1)
+    assert _version_tuple("4.49.0") < (5, 10, 1)
+    assert _version_tuple("2.15.0+cpu") == (2, 15, 0)
 
 
 def test_extract_sql_from_fence():

@@ -44,12 +44,16 @@ class GemmaSqlAgent:
         if self.model is not None:
             return
 
-        from transformers import AutoProcessor
+        _require_gemma4_transformers()
+        from transformers import AutoTokenizer
 
         token = self.settings.hf_token or None
         model_id = self.settings.model_id
         logger.info("Loading model %s", model_id)
-        self.processor = AutoProcessor.from_pretrained(model_id, token=token)
+        # Text-only SQL agent: the tokenizer carries Gemma 4's chat template and
+        # tool parser. AutoProcessor also pulls the image/video processors, which
+        # require torchvision even when no media is sent.
+        self.processor = AutoTokenizer.from_pretrained(model_id, token=token)
         try:
             from transformers import AutoModelForMultimodalLM
 
@@ -218,6 +222,33 @@ class GemmaSqlAgent:
         steps.append(record)
         if debug:
             logger.info("agent step %s [%s]: %s", step, kind, json.dumps(payload, default=str)[:4000])
+
+
+def _require_gemma4_transformers() -> None:
+    import transformers
+
+    if _version_tuple(transformers.__version__) < (5, 10, 1):
+        raise RuntimeError(
+            f"Installed transformers is {transformers.__version__}, which cannot load "
+            "google/gemma-4-E4B-it (Gemma4Processor was added in transformers 5.10). "
+            "On Windows, `py -3` ignores an activated virtualenv and uses the system "
+            "interpreter. Start the API with the project environment:\n"
+            r".\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+        )
+
+
+def _version_tuple(value: str) -> tuple[int, ...]:
+    parts: list[int] = []
+    for piece in value.split("."):
+        digits = ""
+        for char in piece:
+            if char.isdigit():
+                digits += char
+            else:
+                break
+        if digits:
+            parts.append(int(digits))
+    return tuple(parts)
 
 
 def _normalize_tool_call(call: Any) -> tuple[str, dict[str, Any]]:

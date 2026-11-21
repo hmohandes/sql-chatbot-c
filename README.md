@@ -13,10 +13,10 @@ copy .env.example .env
 
 Edit `.env` with your PostgreSQL URL and Hugging Face token. Accept the Gemma 4 license on Hugging Face before downloading the model.
 
-Start the API:
+Start the API with the virtualenv interpreter. `py -3` ignores the activated environment and uses the system Python, whose Transformers build cannot load Gemma 4.
 
 ```powershell
-py -3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Ask a question
